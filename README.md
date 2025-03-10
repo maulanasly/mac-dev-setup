@@ -44,5 +44,4 @@ terraform plan
 ### font validation
 ```bash
 echo "\ue62b" # This should display a symbol if the Nerd Font is working
-fc-cache -f -v # This should display the font cache
 ```

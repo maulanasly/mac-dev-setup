@@ -70,6 +70,10 @@ resource "null_resource" "install_fonts_and_tools" {
       # Download M365Princess.omp.json theme file
       wget https://github.com/JanDeDobbeleer/oh-my-posh/raw/main/themes/M365Princess.omp.json -O ~/.poshthemes/M365Princess.omp.json
       
+      # Copy oh-my-posh completion script from repo to home directory
+      cp .oh-my-posh-completion.zsh ~/.oh-my-posh-completion.zsh
+      chmod +r ~/.oh-my-posh-completion.zsh
+
       # Install ZSH plugins
       brew install zsh-autosuggestions zsh-syntax-highlighting
     EOT
