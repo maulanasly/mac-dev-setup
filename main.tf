@@ -50,12 +50,27 @@ resource "null_resource" "install_fonts_and_tools" {
   depends_on = [null_resource.install_homebrew]
   provisioner "local-exec" {
     command = <<EOT
+      # Remove previous font installation if exists
+      brew uninstall --cask font-fira-code-nerd-font || true
+      
+      # Install font
       brew tap homebrew/cask-fonts
       brew install --cask font-fira-code-nerd-font
-      brew install oh-my-posh zsh-autosuggestions zsh-syntax-highlighting
+      
+      # Install terminal tools
+      brew install oh-my-posh
+      
+      # Download and install oh-my-posh theme
+      mkdir -p ~/.poshthemes
+      wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/themes.zip -O ~/.poshthemes/themes.zip
+      unzip -o ~/.poshthemes/themes.zip -d ~/.poshthemes
+      chmod u+rw ~/.poshthemes/*.json
+      rm ~/.poshthemes/themes.zip
+      
+      # Install ZSH plugins
+      brew install zsh-autosuggestions zsh-syntax-highlighting
     EOT
   }
-}
 
 # Configure ~/.zshrc for pyenv, oh-my-posh, and auto-completion
 resource "null_resource" "setup_zshrc" {
