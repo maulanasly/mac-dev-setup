@@ -67,10 +67,14 @@ resource "null_resource" "install_fonts_and_tools" {
       chmod u+rw ~/.poshthemes/*.json
       rm ~/.poshthemes/themes.zip
       
+      # Download M365Princess.omp.json theme file
+      wget https://github.com/JanDeDobbeleer/oh-my-posh/raw/main/themes/M365Princess.omp.json -O ~/.poshthemes/M365Princess.omp.json
+      
       # Install ZSH plugins
       brew install zsh-autosuggestions zsh-syntax-highlighting
     EOT
   }
+}
 
 # Configure ~/.zshrc for pyenv, oh-my-posh, and auto-completion
 resource "null_resource" "setup_zshrc" {
