@@ -45,3 +45,7 @@ terraform plan
 ```bash
 echo "\ue62b" # This should display a symbol if the Nerd Font is working
 ```
+
+### Change font default
+1. Open iterm (Command + ,)
+2. Profile -> Font -> FireCode Nerd Font Propo
