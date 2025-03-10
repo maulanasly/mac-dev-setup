@@ -45,11 +45,15 @@ resource "null_resource" "install_python" {
   }
 }
 
-# Install additional dev tools
-resource "null_resource" "install_dev_tools" {
+# Install fonts and terminal tools first
+resource "null_resource" "install_fonts_and_tools" {
   depends_on = [null_resource.install_homebrew]
   provisioner "local-exec" {
-    command = "brew install git neovim tmux oh-my-posh zsh-autosuggestions zsh-syntax-highlighting"
+    command = <<EOT
+      brew tap homebrew/cask-fonts
+      brew install --cask font-fira-code-nerd-font
+      brew install oh-my-posh zsh-autosuggestions zsh-syntax-highlighting
+    EOT
   }
 }
 
@@ -111,18 +115,6 @@ resource "null_resource" "setup_zshrc" {
 
       # Add ZSH Highlight Highlighters directory
       echo 'export ZSH_HIGHLIGHT_HIGHLIGHTERS_DIR=/opt/homebrew/share/zsh-syntax-highlighting/highlighters' >> ~/.zshrc
-    EOT
-  }
-}
-
-# Install additional dev tools
-resource "null_resource" "install_dev_tools" {
-  depends_on = [null_resource.install_homebrew]
-  provisioner "local-exec" {
-    command = <<EOT
-      brew tap homebrew/cask-fonts
-      brew install git neovim tmux oh-my-posh zsh-autosuggestions zsh-syntax-highlighting
-      brew install --cask font-fira-code-nerd-font
     EOT
   }
 }

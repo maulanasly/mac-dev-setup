@@ -40,3 +40,8 @@ terraform validate
 ```bash
 terraform plan
 ```
+
+### font validation
+```bash
+echo "\ue62b" # This should display a symbol if the Nerd Font is working
+```
