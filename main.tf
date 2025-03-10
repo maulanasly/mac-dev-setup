@@ -114,3 +114,15 @@ resource "null_resource" "setup_zshrc" {
     EOT
   }
 }
+
+# Install additional dev tools
+resource "null_resource" "install_dev_tools" {
+  depends_on = [null_resource.install_homebrew]
+  provisioner "local-exec" {
+    command = <<EOT
+      brew tap homebrew/cask-fonts
+      brew install git neovim tmux oh-my-posh zsh-autosuggestions zsh-syntax-highlighting
+      brew install --cask font-fira-code-nerd-font
+    EOT
+  }
+}
