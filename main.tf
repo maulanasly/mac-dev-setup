@@ -87,6 +87,14 @@ resource "null_resource" "setup_zshrc" {
       # Clear existing .zshrc content
       echo '' > ~/.zshrc
 
+      # Add Pyenv setup - place this first for proper initialization
+      echo '# Pyenv setup' >> ~/.zshrc
+      echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.zshrc
+      echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.zshrc
+      echo 'eval "$(pyenv init -)"' >> ~/.zshrc
+      echo 'eval "$(pyenv virtualenv-init -)"' >> ~/.zshrc
+      echo '' >> ~/.zshrc
+
       # Add Oh My Posh conditional setup
       echo 'if [ "$TERM_PROGRAM" != "Apple_Terminal" ]; then' >> ~/.zshrc
       echo '  eval "$(oh-my-posh init zsh)"' >> ~/.zshrc
@@ -104,27 +112,14 @@ resource "null_resource" "setup_zshrc" {
       # Add auto-completion setup
       echo 'autoload -U compinit' >> ~/.zshrc
       echo 'compinit' >> ~/.zshrc
-      echo 'source ~/.oh-my-posh-completion.zsh' >> ~/.zshrc
-      echo '' >> ~/.zshrc
-
-      # Add Pyenv setup
-      echo '# Pyenv setup' >> ~/.zshrc
-      echo 'export PATH="$HOME/.pyenv/bin:$PATH"' >> ~/.zshrc
-      echo 'eval "$(pyenv init --path)"' >> ~/.zshrc
-      echo 'eval "$(pyenv virtualenv-init -)"' >> ~/.zshrc
+      echo '# Only source completion if file exists' >> ~/.zshrc
+      echo '[ -f ~/.oh-my-posh-completion.zsh ] && source ~/.oh-my-posh-completion.zsh' >> ~/.zshrc
       echo '' >> ~/.zshrc
 
       # Add Zsh plugins
       echo '# Zsh plugins' >> ~/.zshrc
       echo 'source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh' >> ~/.zshrc
       echo 'source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh' >> ~/.zshrc
-      echo '' >> ~/.zshrc
-
-      # Add Auto-completion setup
-      echo '# Auto-completion setup' >> ~/.zshrc
-      echo 'autoload -U compinit' >> ~/.zshrc
-      echo 'compinit' >> ~/.zshrc
-      echo 'source ~/.oh-my-posh-completion.zsh' >> ~/.zshrc
       echo '' >> ~/.zshrc
 
       # Add ZSH Highlight Highlighters directory
