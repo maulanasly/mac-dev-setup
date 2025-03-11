@@ -114,17 +114,8 @@ resource "null_resource" "setup_zshrc" {
       echo 'eval "$(pyenv virtualenv-init -)"' >> ~/.zshrc
       echo '' >> ~/.zshrc
 
-      # Add Oh My Posh setup again (as per your current .zshrc)
-      echo '# Oh My Posh setup' >> ~/.zshrc
-      echo 'if [ "$TERM_PROGRAM" != "Apple_Terminal" ]; then' >> ~/.zshrc
-      echo '  eval "$(oh-my-posh init zsh)"' >> ~/.zshrc
-      echo 'fi' >> ~/.zshrc
-      echo 'eval "$(oh-my-posh init zsh --config ~/.poshthemes/M365Princess.omp.json)"' >> ~/.zshrc
-      echo '' >> ~/.zshrc
-
       # Add Zsh plugins
       echo '# Zsh plugins' >> ~/.zshrc
-      echo 'plugins=(git zsh-autosuggestions zsh-syntax-highlighting)' >> ~/.zshrc
       echo 'source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh' >> ~/.zshrc
       echo 'source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh' >> ~/.zshrc
       echo '' >> ~/.zshrc
