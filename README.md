@@ -15,6 +15,8 @@ The setup is a single idempotent bash script (no Terraform or state required):
 bash setup.sh
 ```
 
+Supports macOS and Linux (apt/dnf/pacman/apk). On macOS, Fonts install via Homebrew casks and Xcode Command Line Tools are ensured. On Linux, native packages (build essentials, zsh, unzip, etc.) are installed first, Homebrew is used for pyenv/oh-my-posh/zsh plugins, and the Nerd Font goes to `~/.local/share/fonts`.
+
 Installed components can be verified individually (pyenv, oh-my-posh, etc.); re-running the script is safe and skips completed steps.
 
 ## Font Validation
