@@ -7,16 +7,15 @@ This document describes how to set up a development environment on a new MacBook
 4. Git
 5. Oh My Zsh
 
-## Setup Terraform
+## Run Setup
 
-1. Install Terraform: `brew install terraform`
-2. Verify installation: `terraform --version`
-3. Initialize: `terraform init`
-4. Apply configuration: `terraform apply`
-5. Destroy resources: `terraform destroy`
-6. Format code: `terraform fmt`
-7. Validate configuration: `terraform validate`
-8. Plan changes: `terraform plan`
+The setup is a single idempotent bash script (no Terraform or state required):
+
+```bash
+bash setup.sh
+```
+
+Installed components can be verified individually (pyenv, oh-my-posh, etc.); re-running the script is safe and skips completed steps.
 
 ## Font Validation
 
