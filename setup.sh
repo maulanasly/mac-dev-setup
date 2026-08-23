@@ -90,7 +90,7 @@ install_pyenv() {
 
   local py
   for py in 3.12.0 3.10.12; do
-    if pyenv versions --bare | grep -qx "$py"; then
+    if [ -d "$PYENV_ROOT/versions/$py" ]; then
       info "Python $py already installed"
     else
       pyenv install "$py"
@@ -100,28 +100,50 @@ install_pyenv() {
   pyenv global 3.12.0
 }
 
+install_font_from_github() {
+  local font_dir
+  case "$PLATFORM" in
+    macos) font_dir="$HOME/Library/Fonts" ;;
+    linux) font_dir="$HOME/.local/share/fonts" ;;
+  esac
+
+  mkdir -p "$font_dir"
+  warn "Downloading Fira Code Nerd Font from GitHub…"
+  curl -fsSL https://github.com/ryanoasis/nerd-fonts/releases/latest/download/FiraCode.zip -o /tmp/FiraCode.zip
+  unzip -oq /tmp/FiraCode.zip -d "$font_dir"
+  rm -f /tmp/FiraCode.zip
+
+  if [ "$PLATFORM" = linux ]; then
+    fc-cache -f "$font_dir" &> /dev/null || true
+  fi
+}
+
 install_fonts() {
   if [ "$PLATFORM" = macos ]; then
-    brew tap homebrew/cask-fonts
-    brew uninstall --cask font-fira-code-nerd-font || true
-    brew install --cask font-fira-code-nerd-font
+    if brew list --cask font-fira-code-nerd-font &> /dev/null; then
+      info "FiraCode Nerd Font already installed"
+    elif brew install --cask font-fira-code-nerd-font; then
+      info "FiraCode Nerd Font installed via Homebrew"
+    else
+      install_font_from_github
+      info "Fira Code Nerd Font installed to ~/Library/Fonts (fallback)"
+    fi
   else
-    local font_dir="$HOME/.local/share/fonts"
-    mkdir -p "$font_dir"
     if fc-list 2> /dev/null | grep -qi "FiraCodeNerdFont"; then
       info "FiraCode Nerd Font already installed"
     else
-      warn "Downloading Fira Code Nerd Font…"
-      curl -fsSL https://github.com/ryanoasis/nerd-fonts/releases/latest/download/FiraCode.zip -o /tmp/FiraCode.zip
-      unzip -oq /tmp/FiraCode.zip -d "$font_dir"
-      rm /tmp/FiraCode.zip
-      fc-cache -f "$font_dir" &> /dev/null || true
+      install_font_from_github
       info "Fira Code Nerd Font installed"
     fi
   fi
 }
 
 install_terminal_tools() {
+  if brew tap | grep -qx "jandedobbeleer/oh-my-posh"; then
+    warn "Removing stale jandedobbeleer/oh-my-posh tap (shadows homebrew/core formula)"
+    brew untap jandedobbeleer/oh-my-posh
+  fi
+
   brew install oh-my-posh zsh-autosuggestions zsh-syntax-highlighting
 
   mkdir -p ~/.poshthemes
@@ -134,7 +156,12 @@ install_terminal_tools() {
     info "oh-my-posh themes already present"
   fi
 
-  curl -fsSL https://github.com/JanDeDobbeleer/oh-my-posh/raw/main/themes/M365Princess.omp.json -o ~/.poshthemes/M365Princess.omp.json
+  if [ ! -f ~/.poshthemes/M365Princess.omp.json ]; then
+    curl -fsSL https://github.com/JanDeDobbeleer/oh-my-posh/raw/main/themes/M365Princess.omp.json -o ~/.poshthemes/M365Princess.omp.json
+    chmod u+rw ~/.poshthemes/M365Princess.omp.json
+  else
+    info "M365Princess theme already present"
+  fi
 
   if [ -f .oh-my-posh-completion.zsh ] && [ ! -f ~/.oh-my-posh-completion.zsh ]; then
     cp .oh-my-posh-completion.zsh ~/.oh-my-posh-completion.zsh
@@ -142,33 +169,90 @@ install_terminal_tools() {
   fi
 }
 
-write_zshrc() {
-  local brew_prefix="$(brew --prefix)"
+ensure_zprofile() {
+  local zp="$HOME/.zprofile"
+  local begin="# >>> mac-dev-setup >>>"
+  local end="# <<< mac-dev-setup <<<"
 
-  cat > ~/.zshrc << EOF
+  if [ -f "$zp" ] && grep -qF "$begin" "$zp"; then
+    return
+  fi
+
+  {
+    printf '%s\n' "$begin"
+    cat << 'EOF'
+if [ -x /opt/homebrew/bin/brew ]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [ -x /usr/local/bin/brew ]; then
+  eval "$(/usr/local/bin/brew shellenv)"
+elif [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
+  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+elif [ -x "$HOME/.linuxbrew/bin/brew" ]; then
+  eval "$("$HOME/.linuxbrew/bin/brew" shellenv)"
+fi
+EOF
+    printf '%s\n' "$end"
+  } >> "$zp"
+
+  info "Homebrew shellenv written to $zp"
+}
+
+write_zshrc() {
+  local rc="$HOME/.zshrc"
+  local begin="# >>> mac-dev-setup >>>"
+  local end="# <<< mac-dev-setup <<<"
+
+  touch "$rc"
+
+  if grep -qF "$begin" "$rc"; then
+    local tmp
+    tmp="$(mktemp)"
+    awk -v b="$begin" -v e="$end" \
+      'index($0, b) {skip = 1; next} index($0, e) {skip = 0; next} !skip' \
+      "$rc" > "$tmp"
+    mv "$tmp" "$rc"
+  fi
+
+  {
+    printf '%s\n' "$begin"
+    cat << 'EOF'
 # Pyenv setup
-export PYENV_ROOT="\$HOME/.pyenv"
-export PATH="\$PYENV_ROOT/bin:\$PATH"
-eval "\$(pyenv init -)"
-eval "\$(pyenv virtualenv-init -)"
+export PYENV_ROOT="$HOME/.pyenv"
+[ -d "$PYENV_ROOT/bin" ] && export PATH="$PYENV_ROOT/bin:$PATH"
+if command -v pyenv > /dev/null 2>&1; then
+  eval "$(pyenv init -)"
+  if command -v pyenv-virtualenv > /dev/null 2>&1 || [ -d "${PYENV_ROOT:-$HOME/.pyenv}/plugins/pyenv-virtualenv" ]; then
+    eval "$(pyenv virtualenv-init -)"
+  fi
+fi
 
 # Oh My Posh
-eval "\$(oh-my-posh init zsh --config ~/.poshthemes/M365Princess.omp.json)"
+if command -v oh-my-posh > /dev/null 2>&1 && [ -f "$HOME/.poshthemes/M365Princess.omp.json" ]; then
+  eval "$(oh-my-posh init zsh --config "$HOME/.poshthemes/M365Princess.omp.json")"
+fi
 
 # Auto-completion
 autoload -U compinit
 compinit
-[ -f ~/.oh-my-posh-completion.zsh ] && source ~/.oh-my-posh-completion.zsh
+[ -f "$HOME/.oh-my-posh-completion.zsh" ] && source "$HOME/.oh-my-posh-completion.zsh"
 
-# Zsh plugins
-if [ -f "$brew_prefix/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]; then
-  source "$brew_prefix/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+# Zsh plugins (Homebrew)
+if command -v brew > /dev/null 2>&1; then
+  _brew_prefix="$(brew --prefix)"
+  if [ -f "$_brew_prefix/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]; then
+    source "$_brew_prefix/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+  fi
+  if [ -f "$_brew_prefix/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]; then
+    source "$_brew_prefix/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+  fi
+  export ZSH_HIGHLIGHT_HIGHLIGHTERS_DIR="$_brew_prefix/share/zsh-syntax-highlighting/highlighters"
+  unset _brew_prefix
 fi
-if [ -f "$brew_prefix/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]; then
-  source "$brew_prefix/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
-fi
-export ZSH_HIGHLIGHT_HIGHLIGHTERS_DIR="$brew_prefix/share/zsh-syntax-highlighting/highlighters"
 EOF
+    printf '%s\n' "$end"
+  } >> "$rc"
+
+  info "Managed block written to $rc (existing config preserved)"
 }
 
 detect_platform
@@ -188,12 +272,13 @@ step "pyenv and build dependencies"
 install_pyenv
 
 step "Fonts"
-install_fonts
+install_fonts || warn "Font installation failed; continuing without it"
 
 step "Terminal tools"
 install_terminal_tools
 
 step "Configure ~/.zshrc"
+ensure_zprofile
 write_zshrc
 
 step "Done! Restart your terminal or run: source ~/.zshrc"
