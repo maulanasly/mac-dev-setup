@@ -163,10 +163,9 @@ install_terminal_tools() {
     info "M365Princess theme already present"
   fi
 
-  if [ -f .oh-my-posh-completion.zsh ] && [ ! -f ~/.oh-my-posh-completion.zsh ]; then
-    cp .oh-my-posh-completion.zsh ~/.oh-my-posh-completion.zsh
-    chmod +r ~/.oh-my-posh-completion.zsh
-  fi
+  mkdir -p "$HOME/.zsh/completions"
+  rm -f "$HOME/.oh-my-posh-completion.zsh"
+  rm -f "$HOME/.zsh/completions/_oh-my-posh"
 }
 
 ensure_zprofile() {
@@ -232,9 +231,10 @@ if command -v oh-my-posh > /dev/null 2>&1 && [ -f "$HOME/.poshthemes/M365Princes
 fi
 
 # Auto-completion
-autoload -U compinit
+mkdir -p "$HOME/.zsh/completions"
+fpath=("$HOME/.zsh/completions" $fpath)
+autoload -Uz compinit
 compinit
-[ -f "$HOME/.oh-my-posh-completion.zsh" ] && source "$HOME/.oh-my-posh-completion.zsh"
 
 # Zsh plugins (Homebrew)
 if command -v brew > /dev/null 2>&1; then
