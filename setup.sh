@@ -146,26 +146,72 @@ install_terminal_tools() {
 
   brew install oh-my-posh zsh-autosuggestions zsh-syntax-highlighting
 
-  mkdir -p ~/.poshthemes
-  if [ ! -f ~/.poshthemes/themes.zip ]; then
-    curl -fsSL https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/themes.zip -o ~/.poshthemes/themes.zip
-    unzip -oq ~/.poshthemes/themes.zip -d ~/.poshthemes
-    chmod u+rw ~/.poshthemes/*.json
-    rm ~/.poshthemes/themes.zip
-  else
-    info "oh-my-posh themes already present"
-  fi
-
-  if [ ! -f ~/.poshthemes/M365Princess.omp.json ]; then
-    curl -fsSL https://github.com/JanDeDobbeleer/oh-my-posh/raw/main/themes/M365Princess.omp.json -o ~/.poshthemes/M365Princess.omp.json
-    chmod u+rw ~/.poshthemes/M365Princess.omp.json
-  else
-    info "M365Princess theme already present"
-  fi
-
   mkdir -p "$HOME/.zsh/completions"
   rm -f "$HOME/.oh-my-posh-completion.zsh"
   rm -f "$HOME/.zsh/completions/_oh-my-posh"
+}
+
+write_prompt_theme() {
+  local theme="$HOME/.poshthemes/custom.omp.json"
+  mkdir -p "$HOME/.poshthemes"
+
+  cat > "$theme" << 'EOF'
+{
+  "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
+  "version": 4,
+  "final_space": true,
+  "blocks": [
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "segments": [
+        {
+          "type": "session",
+          "style": "plain",
+          "foreground": "#61AFEF",
+          "template": "{{ .UserName }} "
+        },
+        {
+          "type": "path",
+          "style": "plain",
+          "foreground": "#E5C07B",
+          "options": {
+            "style": "folder"
+          },
+          "template": "{{ if gt (len .Path) 24 }}{{ trunc 21 .Path }}…{{ else }}{{ .Path }}{{ end }} "
+        },
+        {
+          "type": "python",
+          "style": "plain",
+          "foreground": "#98C379",
+          "options": {
+            "display_mode": "always",
+            "fetch_virtual_env": true
+          },
+          "template": "\ue73c {{ if .Venv }}{{ .Venv }} {{ end }}{{ .Full }} "
+        },
+        {
+          "type": "git",
+          "style": "plain",
+          "foreground": "#C678DD",
+          "template": "\u2796 ({{ .HEAD }}) "
+        },
+        {
+          "type": "time",
+          "style": "plain",
+          "foreground": "#E06C75",
+          "options": {
+            "time_format": "15:04"
+          },
+          "template": "\u2665 {{ .CurrentDate | date .Format }}"
+        }
+      ]
+    }
+  ]
+}
+EOF
+
+  info "Custom prompt theme written to $theme"
 }
 
 ensure_zprofile() {
@@ -226,8 +272,8 @@ if command -v pyenv > /dev/null 2>&1; then
 fi
 
 # Oh My Posh
-if command -v oh-my-posh > /dev/null 2>&1 && [ -f "$HOME/.poshthemes/M365Princess.omp.json" ]; then
-  eval "$(oh-my-posh init zsh --config "$HOME/.poshthemes/M365Princess.omp.json")"
+if command -v oh-my-posh > /dev/null 2>&1 && [ -f "$HOME/.poshthemes/custom.omp.json" ]; then
+  eval "$(oh-my-posh init zsh --config "$HOME/.poshthemes/custom.omp.json")"
 fi
 
 # Auto-completion
@@ -276,6 +322,7 @@ install_fonts || warn "Font installation failed; continuing without it"
 
 step "Terminal tools"
 install_terminal_tools
+write_prompt_theme
 
 step "Configure ~/.zshrc"
 ensure_zprofile
